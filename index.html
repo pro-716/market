@@ -31,7 +31,11 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; } 
         ::-webkit-scrollbar-track { background: transparent; } 
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-        #reader { width: 100%; border-radius: 1.5rem; overflow: hidden; border: 2px solid rgba(6, 182, 212, 0.3); }
+        
+        /* تعديلات احترافية للكاميرا لتناسب جميع الشاشات بدون تشوه */
+        #reader, #reader-inv { width: 100%; border-radius: 1.5rem; overflow: hidden; border: 2px solid rgba(6, 182, 212, 0.3); position: relative; }
+        #reader video, #reader-inv video { border-radius: 1.5rem; object-fit: cover !important; width: 100% !important; }
+        
         #sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .sidebar-closed { transform: translateX(100%); }
     </style>
@@ -119,10 +123,10 @@
             </div>
         </div>
 
-        <!-- ================= 2. المخزن (مفصول تماماً للموبايل) ================= -->
+        <!-- ================= 2. المخزن ================= -->
         <div id="view-inventory" class="view hidden animate__animated animate__fadeIn">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- فورم الإضافة / التعديل (Sticky on Desktop ONLY) -->
+                <!-- فورم الإضافة / التعديل -->
                 <div class="lg:col-span-1 glass p-6 md:p-8 rounded-3xl h-fit lg:sticky lg:top-4">
                     <h2 id="form-title" class="text-2xl font-black mb-6 text-primary">إضافة منتج 📦</h2>
                     <div class="space-y-4">
@@ -133,11 +137,14 @@
                             <div><label class="text-xs text-textMuted ml-2">سعر البيع (للزبون)</label><input id="inv-price" type="number" class="w-full p-4 rounded-2xl bg-black/40 border border-white/10 outline-none focus:border-secondary text-secondary font-bold"></div>
                         </div>
                         <div><label class="text-xs text-textMuted ml-2">الكمية في المخزن</label><input id="inv-stock" type="number" class="w-full p-4 rounded-2xl bg-black/40 border border-white/10 outline-none focus:border-primary font-bold"></div>
+                        
                         <div>
                             <label class="text-xs text-textMuted ml-2">الباركود</label>
+                            <!-- الكاميرا المخصصة للمخزن -->
+                            <div id="reader-inv" class="hidden mb-2 bg-black/50 min-h-[220px] flex items-center justify-center text-textMuted text-sm"></div>
                             <div class="flex gap-2">
                                 <input id="inv-barcode" type="text" class="w-full p-4 rounded-2xl bg-black/40 border border-white/10 outline-none focus:border-primary font-mono tracking-widest">
-                                <button onclick="startScanner('inventory')" class="px-5 rounded-2xl bg-secondary/20 text-secondary hover:bg-secondary hover:text-white font-bold">📷</button>
+                                <button onclick="startScanner('inventory')" class="px-5 rounded-2xl bg-secondary/20 text-secondary hover:bg-secondary hover:text-white font-bold" title="مسح بالباركود">📷</button>
                             </div>
                         </div>
                         <div class="flex gap-2 pt-4">
@@ -246,7 +253,7 @@
             document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
             document.getElementById(`view-${viewId}`).classList.remove('hidden');
             document.getElementById('sidebar').classList.add('sidebar-closed');
-            stopScanner();
+            stopScanner(); // إيقاف الكاميرا عند تغيير الشاشة
             if(viewId === 'sales') fetchStats();
             if(viewId === 'holds') renderHolds();
             if(viewId === 'pos') setTimeout(() => document.getElementById('manual-barcode').focus(), 100);
@@ -268,23 +275,82 @@
             }
         }
 
-        // ================== SCANNER LOGIC ==================
+        // ================== SCANNER LOGIC (الهندسة الجديدة للكاميرا) ==================
         function startScanner(mode) {
             scanMode = mode;
+            const targetId = mode === 'pos' ? 'reader' : 'reader-inv';
+            
             if (html5QrcodeScanner) stopScanner();
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            html5QrcodeScanner.start( { facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 150 } },
+            
+            if (mode === 'inventory') document.getElementById('reader-inv').classList.remove('hidden');
+            
+            html5QrcodeScanner = new Html5Qrcode(targetId);
+            
+            // إعدادات محسّنة لالتقاط باركودات السوبرماركت الطولية (1D) 
+            const config = { 
+                fps: 15, 
+                qrbox: (viewfinderWidth, viewfinderHeight) => {
+                    // جعل مساحة القراءة مستطيلة الشكل 
+                    const width = Math.min(viewfinderWidth * 0.8, 300);
+                    return { width: width, height: 120 };
+                },
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true } // تسريع الهاردوير
+            };
+
+            // محاولة استخدام الكاميرا الخلفية أولاً
+            html5QrcodeScanner.start( 
+                { facingMode: "environment" }, 
+                config,
                 (decodedText) => {
                     playBeep();
                     if(scanMode === 'pos') {
-                        processBarcode(decodedText); stopScanner(); setTimeout(() => startScanner('pos'), 1000);
+                        processBarcode(decodedText); 
+                        stopScanner(); 
+                        setTimeout(() => startScanner('pos'), 1000); // إيقاف مؤقت لمنع التكرار
                     } else {
-                        document.getElementById('inv-barcode').value = decodedText; stopScanner();
+                        document.getElementById('inv-barcode').value = decodedText; 
+                        stopScanner();
                     }
-                }, (err) => {}
-            ).catch(e => alert("لا يمكن الوصول للكاميرا!"));
+                }, 
+                (err) => { /* تجاهل الأخطاء المستمرة لعدم إزعاج الكونسول */ }
+            ).catch(e => {
+                // إذا لم توجد كاميرا خلفية (مثل اللابتوب)، شغل كاميرا الويب المتوفرة
+                html5QrcodeScanner.start(
+                    { facingMode: "user" }, 
+                    config,
+                    (decodedText) => {
+                        playBeep();
+                        if(scanMode === 'pos') {
+                            processBarcode(decodedText); 
+                            stopScanner(); 
+                            setTimeout(() => startScanner('pos'), 1000);
+                        } else {
+                            document.getElementById('inv-barcode').value = decodedText; 
+                            stopScanner();
+                        }
+                    }, 
+                    (err) => {}
+                ).catch(err2 => {
+                    alert("⚠️ لا يمكن الوصول للكاميرا! تأكد من إعطاء الصلاحيات، واستخدام رابط HTTPS آمن.");
+                    stopScanner();
+                });
+            });
         }
-        function stopScanner() { if(html5QrcodeScanner) { html5QrcodeScanner.stop().then(()=>{html5QrcodeScanner.clear(); html5QrcodeScanner=null;}).catch(()=>{}); } }
+        
+        function stopScanner() { 
+            if(html5QrcodeScanner) { 
+                html5QrcodeScanner.stop().then(()=>{
+                    html5QrcodeScanner.clear(); 
+                    html5QrcodeScanner=null;
+                    const readerInv = document.getElementById('reader-inv');
+                    if(readerInv) readerInv.classList.add('hidden');
+                    const readerPos = document.getElementById('reader');
+                    if(readerPos) readerPos.innerHTML = 'الكاميرا متوقفة';
+                }).catch(()=>{}); 
+            } else {
+                document.getElementById('reader-inv')?.classList.add('hidden');
+            }
+        }
 
         // ================== POS ==================
         function processBarcode(barcode) {
@@ -334,7 +400,7 @@
             document.getElementById('cart-total').innerText = `${total.toLocaleString()} د.ع`;
         }
 
-        function clearCart() { if(currentCart.length > 0 && confirm("إلغاء הפاتورة؟")) { currentCart = []; renderCart(); } }
+        function clearCart() { if(currentCart.length > 0 && confirm("إلغاء الفاتورة؟")) { currentCart = []; renderCart(); } }
 
         async function checkout() {
             if(currentCart.length === 0) return;
