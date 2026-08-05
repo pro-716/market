@@ -1,553 +1,278 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ERP | Smart POS System</title>
-    
-    <!-- الخطوط والتصميم -->
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>سوق عصري — واجهة مطوّرة 3D</title>
+    <meta name="description" content="نسخة مطوّرة من واجهة متجر بتصميم عصري ثلاثي الأبعاد، تأثيرات نيونية، وسلة محلية.">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
-    <!-- أقوى المكتبات العالمية -->
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { bgDark: '#07090E', primary: '#6366F1', secondary: '#0ea5e9', textMain: '#F8FAFC', textMuted: '#64748b' },
-                    fontFamily: { ibm: ['"IBM Plex Sans Arabic"', 'sans-serif'] }
-                }
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              neon: '#7CFFFA',
+              accent: '#7F00FF'
+            },
+            fontFamily: {
+              cairo: ['Cairo', 'sans-serif'],
+              orbitron: ['Orbitron', 'sans-serif']
             }
+          }
         }
+      }
     </script>
+
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x/dist/cdn.min.js"></script>
+    <!-- Vanilla-Tilt for 3D tilt effect -->
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
+    <!-- Three.js for 3D background and product viewer -->
+    <script src="https://unpkg.com/three@0.155.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Swiper for carousel -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper@8/swiper-bundle.min.css" />
+    <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
+    <!-- AOS for scroll animations -->
+    <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+
     <style>
-        * { -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'IBM Plex Sans Arabic', sans-serif; background-color: #07090E; color: #F8FAFC; overflow: hidden; overscroll-behavior-y: none; }
-        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .neon-glow:hover { box-shadow: 0 0 30px rgba(99, 102, 241, 0.4); }
-        
-        ::-webkit-scrollbar { width: 4px; height: 4px; } 
-        ::-webkit-scrollbar-track { background: transparent; } 
-        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 10px; }
-        
-        /* كاميرا المستقبل - نظام التوجيه */
-        .camera-container { position: relative; border-radius: 1.5rem; overflow: hidden; background: #000; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); border: 2px solid rgba(14, 165, 233, 0.3); }
-        #reader, #reader-inv { width: 100%; min-height: 280px; display: flex; align-items: center; justify-content: center; }
-        #reader video, #reader-inv video { border-radius: 1.5rem; object-fit: cover !important; width: 100% !important; height: 100% !important; transform: scale(1.02); }
-        
-        /* إخفاء عناصر المكتبة المزعجة */
-        #reader__dashboard_section_csr, #reader-inv__dashboard_section_csr { display: none !important; }
-        #reader__dashboard_section_swaplink { display: none !important; }
-
-        .hud-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 20; padding: 1.5rem; box-shadow: inset 0 0 100px rgba(14, 165, 233, 0.1); }
-        .hud-corner { position: absolute; width: 40px; height: 40px; border-color: #0ea5e9; opacity: 0.8; transition: all 0.2s; }
-        .hud-tl { top: 1rem; left: 1rem; border-top: 3px solid; border-left: 3px solid; border-top-left-radius: 16px; }
-        .hud-tr { top: 1rem; right: 1rem; border-top: 3px solid; border-right: 3px solid; border-top-right-radius: 16px; }
-        .hud-bl { bottom: 1rem; left: 1rem; border-bottom: 3px solid; border-left: 3px solid; border-bottom-left-radius: 16px; }
-        .hud-br { bottom: 1rem; right: 1rem; border-bottom: 3px solid; border-right: 3px solid; border-bottom-right-radius: 16px; }
-        
-        .scan-laser { position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: #ef4444; box-shadow: 0 0 15px #ef4444, 0 0 30px #ef4444; animation: laserSweep 2s infinite ease-in-out; opacity: 0.8; }
-        @keyframes laserSweep { 0% { transform: translateY(-80px); } 50% { transform: translateY(80px); } 100% { transform: translateY(-80px); } }
-
-        /* حركة التقاط احترافية */
-        .scan-success .hud-corner { border-color: #22c55e; transform: scale(0.9); border-width: 5px; }
-        .scan-success .scan-laser { background: #22c55e; box-shadow: 0 0 20px #22c55e; }
-
-        /* إشعارات نظام ERP */
-        #toast-container { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 0.75rem; pointer-events: none; width: 90%; max-w: 400px; }
-        .toast { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-radius: 1rem; padding: 1rem; color: #fff; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 12px; animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        .toast-success { border-right: 4px solid #22c55e; }
-        .toast-error { border-right: 4px solid #ef4444; }
-        .toast-warning { border-right: 4px solid #f59e0b; }
-        @keyframes slideIn { from { transform: translateY(-20px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateY(0) scale(1); opacity: 1; } to { transform: translateY(-20px) scale(0.95); opacity: 0; } }
-
-        #sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .sidebar-closed { transform: translateX(100%); }
+      :root{
+        --glass: rgba(255,255,255,0.04);
+      }
+      body{font-family: Cairo, sans-serif;background:linear-gradient(180deg,#050018 0%, #070930 60%);}
+      .neon-text{color:transparent;background-image:linear-gradient(90deg,#7CFFFA,#7F00FF);-webkit-background-clip:text;background-clip:text}
+      .neon-glow{box-shadow:0 4px 30px rgba(127,0,255,0.12),0 0 18px rgba(124,255,250,0.06) inset}
+      .card-glow{background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,0.04)}
+      /* 3D glass layers */
+      .glass-3d{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)); backdrop-filter: blur(8px); border:1px solid rgba(127,0,255,0.08); box-shadow:0 8px 40px rgba(127,0,255,0.06)}
+      /* RTL adjustments for Swiper */
+      .swiper{direction:rtl}
+      /* hero canvas layer */
+      #hero-3d{position:absolute;inset:0;pointer-events:none}
+      .hero-wrap{position:relative;overflow:hidden}
+      /* product tilt cursor */
+      .tilt{transform-style:preserve-3d}
     </style>
-</head>
-<body class="h-screen flex flex-col relative overflow-hidden" onkeydown="handleKeyboardShortcuts(event)">
+  </head>
+  <body class="text-slate-100">
+    <div x-data="shopApp()" x-init="init()" class="min-h-screen">
 
-    <div id="toast-container"></div>
+      <!-- NAVBAR -->
+      <header class="sticky top-0 z-40 backdrop-blur-md bg-[rgba(2,6,23,0.55)] border-b border-[rgba(255,255,255,0.04)]">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <a href="#" class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#7f00ff] to-[#7CFFFA] flex items-center justify-center neon-glow">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15 8H9L12 2Z" fill="white" opacity="0.9"/></svg>
+              </div>
+              <div class="leading-4">
+                <div class="text-lg font-semibold neon-text">سوق عصري</div>
+                <div class="text-xs text-slate-400">تصميم ثلاثي الأبعاد تفاعلي</div>
+              </div>
+            </a>
 
-    <!-- تأثيرات خلفية خفيفة جداً لتحسين الأداء -->
-    <div class="fixed top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-primary rounded-full mix-blend-screen filter blur-[120px] opacity-10 pointer-events-none z-0"></div>
-    <div class="fixed bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-secondary rounded-full mix-blend-screen filter blur-[120px] opacity-10 pointer-events-none z-0"></div>
+            <nav class="hidden md:flex items-center gap-3 mr-6">
+              <a href="#products" class="text-slate-300 hover:text-white transition">المنتجات</a>
+              <a href="#features" class="text-slate-300 hover:text-white transition">مزايا</a>
+              <a href="#about" class="text-slate-300 hover:text-white transition">عن المتجر</a>
+            </nav>
+          </div>
 
-    <!-- Header -->
-    <header class="glass mx-4 mt-4 p-4 rounded-3xl flex justify-between items-center z-40 relative shadow-lg">
-        <button onclick="toggleSidebar()" class="p-3 bg-white/5 rounded-2xl hover:bg-primary/40 transition-all text-white active:scale-95">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-        <h1 class="text-2xl md:text-3xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary text-center flex-1">
-            NEXUS <span class="font-light text-textMain">ERP</span>
-        </h1>
-        <div id="connection-status" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-green-500/10 text-green-400 font-bold shadow-[0_0_15px_rgba(34,197,94,0.2)]" title="متصل بالنظام">🟢</div>
-    </header>
-
-    <!-- Sidebar -->
-    <aside id="sidebar" class="fixed top-0 right-0 w-80 h-full glass z-50 sidebar-closed border-l border-white/10 flex flex-col p-6 shadow-2xl">
-        <div class="flex justify-between items-center mb-8 mt-2">
-            <h2 class="text-2xl font-black text-secondary">إدارة النظام</h2>
-            <button onclick="toggleSidebar()" class="text-textMuted hover:text-red-500 text-3xl font-black transition-colors">✕</button>
-        </div>
-        <nav class="flex flex-col gap-3 flex-1 overflow-y-auto no-scrollbar">
-            <button onclick="switchView('pos')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl hover:bg-primary transition-all font-bold text-lg active:scale-95">🛒 الكاشير <span class="text-xs bg-black/40 px-2 py-1 rounded border border-white/10">F2</span></button>
-            <button onclick="switchView('inventory')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl hover:bg-secondary hover:text-black transition-all font-bold text-lg active:scale-95">📦 إدارة المخزن</button>
-            <button onclick="switchView('sales')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl hover:bg-primary transition-all font-bold text-lg active:scale-95">📈 التقارير المالية</button>
-            <div class="h-px bg-white/10 my-2"></div>
-            <button onclick="switchView('holds')" class="flex items-center justify-between p-4 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-2xl hover:bg-yellow-500 hover:text-black transition-all font-bold text-lg active:scale-95">
-                <span>⏳ فواتير معلقة</span><span id="hold-count-badge" class="bg-yellow-500 text-black px-3 py-1 rounded-full text-sm font-black">0</span>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <input x-model="query" @input.debounce="search()" placeholder="ابحث عن منتج..." class="px-3 py-2 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.04)] text-slate-100 w-56 focus:outline-none" />
+            </div>
+            <button @click="toggleCart()" class="relative p-2 rounded-lg bg-[rgba(127,0,255,0.08)] hover:bg-[rgba(127,0,255,0.14)] transition neon-glow">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-neon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 7h12l-2-7M16 21a1 1 0 11-2 0 1 1 0 012 0zM8 21a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+              <div x-text="cartCount" x-show="cartCount>0" class="absolute -top-1 -left-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center shadow">0</div>
             </button>
-            <button onclick="switchView('barcode')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl hover:bg-white hover:text-black transition-all font-bold text-lg active:scale-95">🖨️ طباعة باركود</button>
-        </nav>
-    </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto p-4 z-10 relative">
-        
-        <!-- ================= 1. POS (الكاشير الذكي) ================= -->
-        <div id="view-pos" class="view animate__animated animate__fadeIn h-full">
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 h-full pb-10">
-                
-                <!-- قسم القراءة -->
-                <div class="xl:col-span-1 space-y-4">
-                    <div class="glass p-6 rounded-3xl text-center shadow-xl">
-                        
-                        <!-- واجهة الكاميرا المتطورة -->
-                        <div id="camera-wrapper-pos" class="camera-container hidden mb-6">
-                            <div id="reader"></div>
-                            <div class="hud-overlay">
-                                <div class="hud-corner hud-tl"></div><div class="hud-corner hud-tr"></div>
-                                <div class="hud-corner hud-bl"></div><div class="hud-corner hud-br"></div>
-                                <div class="scan-laser"></div>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-3">
-                            <button onclick="startScanner('pos')" class="flex-1 py-4 rounded-2xl bg-primary text-white font-bold neon-glow transition-all text-sm active:scale-95 shadow-lg shadow-primary/30">📷 فتح الماسح</button>
-                            <button onclick="stopScanner()" class="px-6 rounded-2xl bg-white/5 text-red-400 font-bold hover:bg-red-500 hover:text-white transition-all text-sm border border-red-500/20">إيقاف</button>
-                        </div>
-                        
-                        <div class="mt-6 relative">
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-textMuted">⌨️</div>
-                            <input type="text" id="manual-barcode" placeholder="الباركود (تلقائي / يدوي)" class="w-full pl-4 pr-10 py-4 rounded-2xl bg-black/50 border border-white/10 outline-none focus:border-primary text-center text-xl font-mono tracking-widest transition-all shadow-inner">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- فاتورة الكاشير -->
-                <div class="xl:col-span-2">
-                    <div class="glass p-6 rounded-3xl h-full flex flex-col min-h-[60vh] shadow-xl relative overflow-hidden">
-                        <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                            <h2 class="text-2xl font-black text-secondary flex items-center gap-2"><span class="text-3xl">🛒</span> الفاتورة</h2>
-                            <div class="flex gap-3">
-                                <button onclick="holdCart()" class="px-5 py-2.5 bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 rounded-xl hover:bg-yellow-500 hover:text-black font-bold transition-all text-sm active:scale-95">تعليق ⏳</button>
-                                <button onclick="clearCart()" class="px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white font-bold transition-all text-sm active:scale-95">إلغاء 🗑️</button>
-                            </div>
-                        </div>
-                        
-                        <div id="cart-items" class="flex-1 space-y-3 overflow-y-auto pr-2 mb-6 no-scrollbar"></div>
-
-                        <div class="p-6 bg-black/60 rounded-2xl border border-white/10 shadow-2xl mt-auto">
-                            <div class="flex justify-between items-end mb-6">
-                                <span class="text-lg text-textMuted font-bold">الإجمالي المطلوب:</span>
-                                <span id="cart-total" class="text-4xl md:text-5xl font-black text-secondary font-mono tracking-tight">0 <span class="text-lg text-textMuted font-ibm">د.ع</span></span>
-                            </div>
-                            <button onclick="checkout()" class="w-full py-5 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white font-black text-2xl hover:shadow-[0_0_40px_rgba(14,165,233,0.4)] transition-all active:scale-[0.98] flex justify-center items-center gap-4">
-                                إتمام الدفع والطباعة <span class="text-sm bg-black/30 px-3 py-1 rounded-lg hidden md:inline border border-white/10">↵ Enter</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <button @click="toggleTheme()" class="p-2 rounded-lg bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.04)] transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707.707M6.343 6.343l-.707.707m12.728 0l-.707-.707M6.343 17.657l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </button>
+          </div>
         </div>
+      </header>
 
-        <!-- ================= 2. المخزن (Inventory) ================= -->
-        <div id="view-inventory" class="view hidden animate__animated animate__fadeIn pb-10">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                <div class="lg:col-span-1 glass p-6 md:p-8 rounded-3xl h-fit lg:sticky lg:top-4 shadow-xl">
-                    <h2 id="form-title" class="text-2xl font-black mb-6 text-primary flex items-center gap-2">📦 إضافة منتج</h2>
-                    <div class="space-y-5">
-                        <input type="hidden" id="edit-id">
-                        <div>
-                            <label class="text-xs text-textMuted ml-2 font-bold uppercase tracking-wider">اسم المنتج</label>
-                            <input id="inv-name" type="text" class="w-full p-4 rounded-xl bg-black/40 border border-white/10 outline-none focus:border-primary transition-all mt-1">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-xs text-textMuted ml-2 font-bold uppercase tracking-wider">سعر الجملة</label>
-                                <input id="inv-cost" type="number" class="w-full p-4 rounded-xl bg-black/40 border border-white/10 outline-none focus:border-yellow-500 text-yellow-500 font-bold transition-all mt-1 text-center">
-                            </div>
-                            <div>
-                                <label class="text-xs text-textMuted ml-2 font-bold uppercase tracking-wider">سعر البيع</label>
-                                <input id="inv-price" type="number" class="w-full p-4 rounded-xl bg-black/40 border border-white/10 outline-none focus:border-secondary text-secondary font-bold transition-all mt-1 text-center">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-xs text-textMuted ml-2 font-bold uppercase tracking-wider">الكمية المتوفرة</label>
-                            <input id="inv-stock" type="number" class="w-full p-4 rounded-xl bg-black/40 border border-white/10 outline-none focus:border-primary font-bold transition-all mt-1 text-center">
-                        </div>
-                        
-                        <div>
-                            <label class="text-xs text-textMuted ml-2 font-bold uppercase tracking-wider">الباركود</label>
-                            <div id="camera-wrapper-inv" class="camera-container hidden my-3">
-                                <div id="reader-inv"></div>
-                                <div class="hud-overlay"><div class="hud-corner hud-tl"></div><div class="hud-corner hud-tr"></div><div class="hud-corner hud-bl"></div><div class="hud-corner hud-br"></div><div class="scan-laser"></div></div>
-                            </div>
-                            <div class="flex gap-2 mt-1">
-                                <input id="inv-barcode" type="text" class="w-full p-4 rounded-xl bg-black/40 border border-white/10 outline-none focus:border-primary font-mono tracking-widest text-center transition-all">
-                                <button onclick="startScanner('inventory')" class="px-5 rounded-xl bg-primary/20 text-primary hover:bg-primary hover:text-white font-bold transition-all active:scale-95 border border-primary/30" title="مسح بالباركود">📷</button>
-                            </div>
-                        </div>
-                        <div class="flex gap-3 pt-2">
-                            <button onclick="saveProduct()" id="btn-save" class="flex-1 py-4 rounded-xl bg-primary text-white font-black text-lg shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] transition-all active:scale-95">حفظ بقاعدة البيانات</button>
-                            <button onclick="cancelEdit()" id="btn-cancel" class="hidden px-6 py-4 rounded-xl bg-white/10 hover:bg-white/20 font-bold transition-all active:scale-95">إلغاء</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-2 glass p-6 md:p-8 rounded-3xl flex flex-col shadow-xl">
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b border-white/10 pb-6">
-                        <h2 class="text-2xl font-black flex items-center gap-3">المخزن <span id="prod-count" class="text-sm bg-primary/20 text-primary px-3 py-1 rounded-full border border-primary/30">0</span></h2>
-                        <div class="relative w-full md:w-72">
-                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-textMuted">🔍</span>
-                            <input type="text" id="search-inventory" oninput="filterInventory()" placeholder="بحث سريع..." class="w-full pl-4 pr-10 py-3 rounded-xl bg-black/50 border border-white/10 outline-none focus:border-primary text-sm transition-all shadow-inner">
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto pb-4 no-scrollbar">
-                        <table class="w-full text-right border-collapse min-w-[650px]">
-                            <thead>
-                                <tr class="text-textMuted text-xs uppercase tracking-wider border-b border-white/10 bg-white/5">
-                                    <th class="p-4 rounded-tr-xl">المنتج والباركود</th>
-                                    <th class="p-4">الكمية</th>
-                                    <th class="p-4">سعر الجملة</th>
-                                    <th class="p-4">سعر البيع</th>
-                                    <th class="p-4 text-center rounded-tl-xl">إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="products-list" class="divide-y divide-white/5"></tbody>
-                        </table>
-                    </div>
-                </div>
+      <!-- HERO -->
+      <section class="py-16 hero-wrap">
+        <canvas id="hero-3d"></canvas>
+        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8 relative">
+          <div class="flex-1 z-10" data-aos="fade-right">
+            <h1 class="text-4xl md:text-5xl font-bold leading-tight neon-text font-orbitron">أحدث تجربة تسوق ثلاثية الأبعاد</h1>
+            <p class="mt-4 text-slate-300">واجهة ثلاثية الأبعاد، تأثيرات متحركة، وسلة ذكية تعمل محلياً. تصفّح، أضف، وجرّب التصميم الجديد الآن.</p>
+            <div class="mt-6 flex gap-3">
+              <a href="#products" class="px-5 py-3 rounded-full bg-gradient-to-r from-[#7F00FF] to-[#7CFFFA] text-white shadow hover:scale-[1.02] transition neon-glow">تسوق الآن</a>
+              <a href="#about" class="px-5 py-3 rounded-full border border-[rgba(255,255,255,0.06)] text-slate-200">تعرف علينا</a>
             </div>
+            <div class="mt-8 grid grid-cols-3 gap-3">
+              <div class="p-3 glass-3d rounded-lg text-center">
+                <div class="text-xl font-semibold neon-text">تصميم متجاوب</div>
+                <div class="text-sm text-slate-400">يعمل بسلاسة على الجوال والكمبيوتر</div>
+              </div>
+              <div class="p-3 glass-3d rounded-lg text-center">
+                <div class="text-xl font-semibold neon-text">تأثيرات 3D</div>
+                <div class="text-sm text-slate-400">ميل، عمق، وخلفيات متحركة</div>
+              </div>
+              <div class="p-3 glass-3d rounded-lg text-center">
+                <div class="text-xl font-semibold neon-text">أداء محسّن</div>
+                <div class="text-sm text-slate-400">تحسينات للأجهزة المحمولة والحواسيب</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex-1 z-10" data-aos="fade-left">
+            <!-- Swiper -->
+            <div class="swiper max-w-md mx-auto">
+              <div class="swiper-wrapper">
+                <div class="swiper-slide"><img src="https://picsum.photos/seed/1/600/400" class="rounded-xl shadow-lg" alt="banner1"/></div>
+                <div class="swiper-slide"><img src="https://picsum.photos/seed/2/600/400" class="rounded-xl shadow-lg" alt="banner2"/></div>
+                <div class="swiper-slide"><img src="https://picsum.photos/seed/3/600/400" class="rounded-xl shadow-lg" alt="banner3"/></div>
+              </div>
+              <div class="swiper-pagination"></div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <!-- ================= 3. التقارير المالية (Sales) ================= -->
-        <div id="view-sales" class="view hidden animate__animated animate__fadeIn pb-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="glass p-6 rounded-3xl border-b-4 border-secondary text-center shadow-lg relative overflow-hidden"><div class="absolute inset-0 bg-secondary/5"></div><h3 class="text-textMuted text-xs font-bold uppercase mb-2 relative z-10">إيرادات اليوم</h3><div id="stat-daily-rev" class="text-3xl font-black text-secondary font-mono relative z-10">0</div></div>
-                <div class="glass p-6 rounded-3xl border-b-4 border-green-500 text-center shadow-lg relative overflow-hidden"><div class="absolute inset-0 bg-green-500/10"></div><h3 class="text-green-400 text-xs font-bold uppercase mb-2 relative z-10">صافي الأرباح 💰</h3><div id="stat-daily-profit" class="text-3xl font-black text-green-500 font-mono relative z-10">0</div></div>
-                <div class="glass p-6 rounded-3xl border-b-4 border-primary text-center shadow-lg relative overflow-hidden"><div class="absolute inset-0 bg-primary/5"></div><h3 class="text-textMuted text-xs font-bold uppercase mb-2 relative z-10">إيرادات الشهر</h3><div id="stat-monthly-rev" class="text-3xl font-black text-primary font-mono relative z-10">0</div></div>
-                <div class="glass p-6 rounded-3xl border-b-4 border-yellow-500 text-center shadow-lg relative overflow-hidden"><div class="absolute inset-0 bg-yellow-500/5"></div><h3 class="text-textMuted text-xs font-bold uppercase mb-2 relative z-10">رأس المال (البضاعة)</h3><div id="stat-capital" class="text-3xl font-black text-yellow-500 font-mono relative z-10">0</div></div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 glass p-8 rounded-3xl shadow-xl">
-                    <h2 class="text-xl font-black mb-6 border-b border-white/10 pb-4">سجل الفواتير</h2>
-                    <div class="overflow-y-auto max-h-[50vh] pr-2 overflow-x-auto no-scrollbar">
-                        <table class="w-full text-right border-collapse min-w-[450px]">
-                            <thead><tr class="text-textMuted text-xs uppercase bg-white/5 border-b border-white/10"><th class="p-4 rounded-tr-xl">رقم الفاتورة</th><th class="p-4">الإيراد</th><th class="p-4 text-green-400">الربح الصافي</th><th class="p-4 rounded-tl-xl">الوقت</th></tr></thead>
-                            <tbody id="invoices-list" class="divide-y divide-white/5"></tbody>
-                        </table>
-                    </div>
+      <!-- PRODUCTS -->
+      <section id="products" class="py-10">
+        <div class="max-w-6xl mx-auto px-4">
+          <h2 class="text-2xl font-bold neon-text mb-4">منتجاتنا</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="products-grid">
+            <!-- products rendered by JS -->
+            <template x-for="p in filtered" :key="p.id">
+              <div class="p-4 rounded-xl card-glow hover:scale-[1.02] transition tilt" data-tilt data-tilt-max="18" data-aos="zoom-in">
+                <div class="relative">
+                  <img :src="p.image" class="rounded-lg h-48 w-full object-cover" :alt="p.title">
+                  <div class="absolute top-3 left-3 bg-gradient-to-tr from-[#7F00FF] to-[#7CFFFA] px-3 py-1 rounded-full text-xs font-semibold">جديد</div>
                 </div>
-                <div class="glass p-8 rounded-3xl border border-red-500/20 bg-red-500/5 shadow-xl">
-                    <h2 class="text-xl font-black mb-6 text-red-400 border-b border-red-500/20 pb-4 flex items-center gap-2">⚠️ نواقص المخزن</h2>
-                    <div id="low-stock-list" class="space-y-3 overflow-y-auto max-h-[50vh] pr-2 no-scrollbar"></div>
+                <div class="mt-3">
+                  <div class="flex items-center justify-between">
+                    <div class="font-semibold text-lg" x-text="p.title"></div>
+                    <div class="text-sm text-slate-300" x-text="formatPrice(p.price)"></div>
+                  </div>
+                  <p class="text-slate-400 mt-2 text-sm" x-text="p.description"></p>
+                  <div class="mt-4 flex items-center justify-between">
+                    <button @click="addToCart(p, $event)" class="px-3 py-2 rounded-full bg-gradient-to-r from-[#7F00FF] to-[#7CFFFA] text-white hover:scale-[1.02] transition">أضف للسلة</button>
+                    <button @click="openQuick(p)" class="px-3 py-2 rounded-full border border-[rgba(255,255,255,0.06)] text-slate-200">عرض سريع</button>
+                  </div>
                 </div>
-            </div>
+              </div>
+            </template>
+          </div>
         </div>
+      </section>
 
-        <!-- ================= 4. الفواتير المعلقة ================= -->
-        <div id="view-holds" class="view hidden animate__animated animate__fadeIn pb-10"><div class="glass p-8 rounded-3xl min-h-[70vh] shadow-xl"><h2 class="text-2xl font-black text-yellow-500 mb-8 border-b border-yellow-500/20 pb-4">طابور الفواتير المعلقة ⏳</h2><div id="hold-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div></div></div>
-        
-        <!-- ================= 5. صانع الباركود ================= -->
-        <div id="view-barcode" class="view hidden animate__animated animate__fadeIn pb-10"><div class="glass p-10 rounded-3xl max-w-2xl mx-auto text-center shadow-xl"><h2 class="text-3xl font-black mb-6 text-primary">توليد باركود للطباعة 🖨️</h2><p class="text-textMuted mb-8 text-sm">اكتب رقم الباركود ليتم تحويله إلى صورة جاهزة للطباعة على الملصقات.</p><input type="text" id="barcode-input" placeholder="اكتب الأرقام هنا..." oninput="generateBarcode()" class="w-full p-5 rounded-2xl bg-black/50 border border-white/10 outline-none focus:border-primary text-center text-3xl font-mono tracking-widest mb-10 shadow-inner"><div class="bg-white p-8 rounded-2xl inline-block mb-10 overflow-x-auto max-w-full shadow-[0_0_30px_rgba(255,255,255,0.1)]"><svg id="barcode-canvas"></svg></div><button onclick="printBarcode()" class="w-full py-5 rounded-2xl bg-secondary text-black font-black text-2xl hover:shadow-[0_0_30px_rgba(14,165,233,0.5)] transition-all active:scale-95">طباعة الباركود فوراً</button></div></div>
-    </main>
+      <!-- FEATURES -->
+      <section id="features" class="py-10 bg-[rgba(255,255,255,0.01)]">
+        <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="p-6 card-glow rounded-xl" data-aos="fade-up">
+            <h3 class="font-semibold neon-text">تأثيرات 3D</h3>
+            <p class="text-slate-400 mt-2">تصميم باستخدام gradients وglow وإمالة ثلاثية الأبعاد.</p>
+          </div>
+          <div class="p-6 card-glow rounded-xl" data-aos="fade-up" data-aos-delay="100">
+            <h3 class="font-semibold neon-text">تجربة مستخدم</h3>
+            <p class="text-slate-400 mt-2">واجهة سريعة وسهلة الاستخدام مع بحث وفلترة.</p>
+          </div>
+          <div class="p-6 card-glow rounded-xl" data-aos="fade-up" data-aos-delay="200">
+            <h3 class="font-semibold neon-text">قابلة للتوسع</h3>
+            <p class="text-slate-400 mt-2">بناء يسهل تحويله إلى SPA أو إضافة باكند لاحقاً.</p>
+          </div>
+        </div>
+      </section>
 
+      <!-- ABOUT -->
+      <section id="about" class="py-10">
+        <div class="max-w-6xl mx-auto px-4 text-slate-300">
+          <h2 class="text-2xl font-bold neon-text">عن المشروع</h2>
+          <p class="mt-3">هذه نسخة مطوّرة لواجهة متجر بسيطة بتحسينات ثلاثية الأبعاد وتأثيرات حديثة. تدعم RTL باللغة العربية وتعمل على أجهزة الجوال والحاسوب.</p>
+        </div>
+      </section>
+
+      <!-- CART SIDEBAR -->
+      <div x-show="cartOpen" x-transition class="fixed top-0 left-0 h-full w-full backdrop-blur-sm bg-[rgba(0,0,0,0.4)] z-50">
+        <div @click.away="cartOpen=false" class="absolute top-0 left-0 h-full w-full flex justify-end">
+          <div class="w-full md:w-96 bg-[#050014] p-6 overflow-auto">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold neon-text">سلة التسوق</h3>
+              <button @click="cartOpen=false" class="text-slate-400">اغلاق ✕</button>
+            </div>
+            <template x-if="cart.length===0">
+              <div class="mt-6 text-slate-400">السلة فارغة — أضف منتجات</div>
+            </template>
+            <template x-for="item in cart" :key="item.id">
+              <div class="mt-4 p-3 bg-[rgba(255,255,255,0.02)] rounded-lg flex items-center gap-3">
+                <img :src="item.image" class="w-16 h-16 object-cover rounded" alt="">
+                <div class="flex-1">
+                  <div class="font-semibold" x-text="item.title"></div>
+                  <div class="text-sm text-slate-400" x-text="formatPrice(item.price)"></div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button @click="decrease(item.id)" class="px-2 py-1 bg-[rgba(255,255,255,0.03)] rounded">-</button>
+                  <div x-text="item.qty" class="px-2"></div>
+                  <button @click="increase(item.id)" class="px-2 py-1 bg-[rgba(255,255,255,0.03)] rounded">+</button>
+                </div>
+              </div>
+            </template>
+
+            <div class="mt-6">
+              <div class="flex items-center justify-between text-slate-200">
+                <div>المجموع</div>
+                <div x-text="formatPrice(total)"></div>
+              </div>
+              <div class="mt-4">
+                <button @click="checkout()" class="w-full px-4 py-3 rounded-full bg-gradient-to-r from-[#7F00FF] to-[#7CFFFA]">إتمام الطلب</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK VIEW MODAL -->
+      <div x-show="quickOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.6)]">
+        <div @click.away="quickOpen=false" class="max-w-3xl w-full p-6 bg-[#06021a] rounded-xl">
+          <div class="flex gap-6">
+            <div class="w-48 h-48 bg-[#0b0720] rounded flex items-center justify-center">
+              <!-- 3D viewer canvas -->
+              <canvas id="product-viewer" class="w-48 h-48"></canvas>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold text-xl" x-text="quick.title"></h3>
+              <p class="text-slate-400 mt-2" x-text="quick.description"></p>
+              <div class="mt-4 text-lg font-bold" x-text="formatPrice(quick.price)"></div>
+              <div class="mt-4 flex gap-3">
+                <button @click="addToCart(quick); quickOpen=false" class="px-4 py-2 rounded-full bg-gradient-to-r from-[#7F00FF] to-[#7CFFFA] text-white">أضف للسلة</button>
+                <button @click="quickOpen=false" class="px-4 py-2 rounded-full border">إغلاق</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="mt-12 py-6 text-center text-slate-400">
+        صنع بحب ❤️ — واجهة مطورة بواسطة Copilot
+      </footer>
+
+    </div>
+
+    <script src="/assets/js/app.js"></script>
     <script>
-        // ================== POCKETBASE CONFIG ==================
-        const pb = new PocketBase('https://abbas716.pockethost.io/');
-        let allProducts = [], currentCart = [], heldCarts = [], scanMode = 'pos', html5QrcodeScanner = null;
-
-        // ================== نظام الصوت المدمج القوي (Web Audio API) ==================
-        // هذا النظام لا يحتاج لملفات خارجية، يولد الصوت فوراً من المعالج!
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
-        
-        function playBeep() {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // تردد عالي وواضح
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.1);
-            } catch(e) {}
-        }
-
-        function playSuccess() {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.3);
-            } catch(e) {}
-        }
-
-        // ================== نظام الإشعارات (Toasts) ==================
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
-            toast.innerHTML = `<span class="text-xl">${icon}</span> <span class="flex-1">${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { 
-                toast.style.animation = 'slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards'; 
-                setTimeout(() => toast.remove(), 300); 
-            }, 2500); 
-        }
-
-        // ================== UI CONTROLS ==================
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('sidebar-closed'); }
-        function switchView(viewId) {
-            document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`view-${viewId}`).classList.remove('hidden');
-            document.getElementById('sidebar').classList.add('sidebar-closed');
-            stopScanner();
-            if(viewId === 'sales') fetchStats();
-            if(viewId === 'holds') renderHolds();
-            if(viewId === 'pos') setTimeout(() => document.getElementById('manual-barcode').focus(), 100);
-        }
-        
-        function handleKeyboardShortcuts(e) {
-            if (e.key === 'F2') { e.preventDefault(); switchView('pos'); document.getElementById('manual-barcode').focus(); }
-            if (e.key === 'Enter') {
-                const manualInput = document.getElementById('manual-barcode');
-                if(document.activeElement === manualInput) { processBarcode(manualInput.value); } 
-                else if(!document.getElementById('view-pos').classList.contains('hidden')) { if(currentCart.length > 0) checkout(); }
-            }
-        }
-
-        // ================== SCANNER LOGIC (Omni-directional + Bulletproof iOS Support) ==================
-        function startScanner(mode) {
-            scanMode = mode;
-            const targetId = mode === 'pos' ? 'reader' : 'reader-inv';
-            const wrapperId = mode === 'pos' ? 'camera-wrapper-pos' : 'camera-wrapper-inv';
-            
-            if (html5QrcodeScanner) stopScanner();
-            const wrapper = document.getElementById(wrapperId);
-            wrapper.classList.remove('hidden');
-            wrapper.classList.remove('scan-success');
-
-            setTimeout(() => {
-                // استخدام getCameras لضمان العمل على متصفحات Safari
-                Html5Qrcode.getCameras().then(devices => {
-                    if (devices && devices.length) {
-                        let cameraId = devices.length > 1 ? devices[devices.length - 1].id : devices[0].id;
-                        
-                        // إجبار المكتبة على قراءة جميع الأنواع الشائعة (1D + 2D)
-                        html5QrcodeScanner = new Html5Qrcode(targetId, {
-                            formatsToSupport: [
-                                Html5QrcodeSupportedFormats.QR_CODE,
-                                Html5QrcodeSupportedFormats.EAN_13,
-                                Html5QrcodeSupportedFormats.EAN_8,
-                                Html5QrcodeSupportedFormats.CODE_128,
-                                Html5QrcodeSupportedFormats.UPC_A,
-                                Html5QrcodeSupportedFormats.UPC_E,
-                                Html5QrcodeSupportedFormats.CODE_39
-                            ]
-                        });
-
-                        html5QrcodeScanner.start(
-                            cameraId, 
-                            { 
-                                fps: 15, 
-                                // إزالة qrbox بالكامل لتتمكن الكاميرا من التقاط الباركود في أي مكان على الشاشة
-                                experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-                            },
-                            (decodedText) => {
-                                playBeep();
-                                wrapper.classList.add('scan-success');
-                                setTimeout(() => wrapper.classList.remove('scan-success'), 300);
-
-                                if(scanMode === 'pos') {
-                                    processBarcode(decodedText); 
-                                    // لا نوقف الكاميرا بل نعطيها استراحة بسيطة
-                                    html5QrcodeScanner.pause();
-                                    setTimeout(() => { if(html5QrcodeScanner) html5QrcodeScanner.resume(); }, 1200);
-                                } else {
-                                    document.getElementById('inv-barcode').value = decodedText;
-                                    showToast(`تم مسح الباركود بنجاح!`, 'success');
-                                    stopScanner();
-                                }
-                            },
-                            (err) => { /* صامت */ }
-                        ).catch(e => {
-                            showToast("تم رفض الإذن للكاميرا أو المتصفح غير مدعوم.", "error");
-                            stopScanner();
-                        });
-                    } else {
-                        showToast("لم يتم العثور على كاميرا!", "error");
-                        stopScanner();
-                    }
-                }).catch(err => {
-                    showToast("يرجى إعطاء صلاحية الكاميرا للمتصفح.", "error");
-                    stopScanner();
-                });
-            }, 100);
-        }
-        
-        function stopScanner() { 
-            if(html5QrcodeScanner) { 
-                try {
-                    html5QrcodeScanner.stop().then(()=>{
-                        html5QrcodeScanner.clear(); html5QrcodeScanner=null;
-                        document.getElementById('camera-wrapper-inv')?.classList.add('hidden');
-                        document.getElementById('camera-wrapper-pos')?.classList.add('hidden');
-                    }).catch(()=>{ html5QrcodeScanner=null; }); 
-                } catch(e) { html5QrcodeScanner=null; }
-            }
-            document.getElementById('camera-wrapper-inv')?.classList.add('hidden');
-            document.getElementById('camera-wrapper-pos')?.classList.add('hidden');
-        }
-
-        // ================== POS SYSTEM ==================
-        function processBarcode(barcode) {
-            if(!barcode) return;
-            const product = allProducts.find(p => p.barcode === barcode);
-            if(product) {
-                const existing = currentCart.find(item => item.id === product.id);
-                if(existing) existing.qty += 1;
-                else currentCart.push({ ...product, qty: 1 });
-                showToast(`تم إضافة: ${product.name}`, 'success'); 
-                renderCart();
-            } else { 
-                showToast(`الباركود (${barcode}) غير مسجل بالمخزن!`, 'error'); 
-            }
-            document.getElementById('manual-barcode').value = ''; 
-            document.getElementById('manual-barcode').focus();
-        }
-
-        function updateQty(idx, delta) { currentCart[idx].qty += delta; if(currentCart[idx].qty <= 0) currentCart.splice(idx, 1); renderCart(); }
-
-        function renderCart() {
-            const container = document.getElementById('cart-items');
-            if(currentCart.length === 0) { container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-textMuted opacity-50"><span class="text-6xl mb-4">🛒</span><p class="font-bold text-lg">الفاتورة فارغة</p></div>'; document.getElementById('cart-total').innerHTML = '0 <span class="text-lg text-textMuted font-ibm">د.ع</span>'; return; }
-            
-            container.innerHTML = ''; let total = 0;
-            currentCart.forEach((item, idx) => {
-                const itemTotal = item.price * item.qty; total += itemTotal;
-                container.innerHTML += `<div class="flex flex-col sm:flex-row justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 mb-3 gap-4 animate__animated animate__fadeInRight animate__faster hover:bg-white/10 transition-colors"><div class="flex-1 text-center sm:text-right"><h4 class="font-bold text-lg md:text-xl text-textMain">${item.name}</h4><p class="text-sm text-textMuted mt-1 font-mono">${item.price.toLocaleString()} x ${item.qty}</p></div><div class="flex items-center gap-5"><div class="flex items-center gap-1 bg-black/50 p-1.5 rounded-xl border border-white/10"><button onclick="updateQty(${idx}, 1)" class="w-10 h-10 rounded-lg bg-white/10 hover:bg-secondary font-black text-xl text-white transition-colors">+</button><span class="w-10 text-center font-bold text-xl">${item.qty}</span><button onclick="updateQty(${idx}, -1)" class="w-10 h-10 rounded-lg bg-white/10 hover:bg-red-500 font-black text-xl text-white transition-colors">-</button></div><div class="text-xl md:text-2xl font-black text-secondary w-28 text-center sm:text-left font-mono">${itemTotal.toLocaleString()}</div></div></div>`;
-            });
-            document.getElementById('cart-total').innerHTML = `${total.toLocaleString()} <span class="text-lg text-textMuted font-ibm">د.ع</span>`;
-        }
-
-        function clearCart() { if(currentCart.length > 0 && confirm("تأكيد مسح جميع منتجات الفاتورة الحالية؟")) { currentCart = []; renderCart(); showToast('تم مسح الفاتورة بنجاح', 'warning'); } }
-
-        async function checkout() {
-            if(currentCart.length === 0) return showToast('لا توجد منتجات للدفع!', 'error');
-            let total = 0, totalProfit = 0; currentCart.forEach(item => { total += (item.price * item.qty); totalProfit += ((item.price - (item.cost_price || 0)) * item.qty); });
-            try {
-                playSuccess(); confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366F1', '#0ea5e9', '#ffffff'] });
-                const record = await pb.collection('invoices').create({ total: total, profit: totalProfit, items: currentCart });
-                
-                // تحديث المخزن في الخلفية بسرعة
-                currentCart.forEach(item => { const prodIndex = allProducts.findIndex(p => p.id === item.id); if(prodIndex > -1) { allProducts[prodIndex].stock = (allProducts[prodIndex].stock || 0) - item.qty; pb.collection('products').update(item.id, { stock: allProducts[prodIndex].stock }).catch(()=>{}); } });
-                
-                showToast('✅ تمت عملية البيع وطباعة الفاتورة', 'success'); 
-                printReceipt(currentCart, total, record.id); 
-                currentCart = []; renderCart(); renderInventoryList();
-            } catch(err) { showToast("فشل الاتصال بقاعدة البيانات!", 'error'); }
-        }
-
-        function holdCart() { if(currentCart.length === 0) return; heldCarts.push({ time: new Date().toLocaleTimeString('ar-IQ'), items: [...currentCart], total: currentCart.reduce((s,i)=>s+(i.price*i.qty),0) }); currentCart = []; renderCart(); document.getElementById('hold-count-badge').innerText = heldCarts.length; showToast("تم تعليق الفاتورة بنجاح", 'warning'); }
-        function renderHolds() { const cont = document.getElementById('hold-list'); cont.innerHTML = ''; if(heldCarts.length === 0) { cont.innerHTML = '<p class="text-textMuted col-span-full text-center py-10">لا توجد فواتير معلقة حالياً.</p>'; return; } heldCarts.forEach((c, idx) => { cont.innerHTML += `<div class="glass p-6 rounded-3xl border-t-4 border-yellow-500 shadow-xl"><div class="flex justify-between items-start mb-6"><div><h3 class="font-bold text-yellow-500 text-lg mb-1">فاتورة معلقة #${idx+1}</h3><p class="text-xs text-textMuted">${c.time} | ${c.items.length} منتجات</p></div><span class="text-2xl font-black font-mono">${c.total.toLocaleString()} <span class="text-sm">د.ع</span></span></div><div class="flex gap-3"><button onclick="restoreHold(${idx})" class="flex-1 py-3 bg-yellow-500 text-black font-bold rounded-xl hover:bg-yellow-400 transition-colors">استرجاع للبيع</button><button onclick="heldCarts.splice(${idx},1); renderHolds(); document.getElementById('hold-count-badge').innerText=heldCarts.length; showToast('تم الحذف', 'warning');" class="px-5 py-3 bg-white/5 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white transition-colors">إلغاء</button></div></div>`; }); }
-        function restoreHold(idx) { if(currentCart.length > 0) return showToast("قم بإنهاء أو تفريغ الفاتورة الحالية أولاً!", 'error'); currentCart = heldCarts[idx].items; heldCarts.splice(idx,1); document.getElementById('hold-count-badge').innerText = heldCarts.length; switchView('pos'); renderCart(); showToast('تم الاسترجاع', 'success'); }
-
-        // ================== INVENTORY ==================
-        async function fetchInitialProducts() { 
-            try { 
-                allProducts = await pb.collection('products').getFullList({ sort: '-created' }); 
-                renderInventoryList(); 
-                document.getElementById('connection-status').innerText = '🟢';
-            } catch(err) { 
-                document.getElementById('connection-status').innerText = '🔴';
-                document.getElementById('connection-status').title = 'غير متصل بالخادم';
-                showToast("فشل الاتصال بالخادم، تأكد من الإنترنت", "error");
-            } 
-        }
-        
-        function renderInventoryList(filtered = null) {
-            const list = document.getElementById('products-list'); list.innerHTML = '';
-            const data = filtered || allProducts; document.getElementById('prod-count').innerText = allProducts.length;
-            data.forEach(p => { const stockColor = p.stock <= 5 ? 'bg-red-500/20 text-red-400 px-2 py-1 rounded border border-red-500/30' : 'text-textMain'; list.innerHTML += `<tr class="hover:bg-white/5 border-b border-white/5 transition-colors"><td class="p-4"><div class="font-bold text-textMain">${p.name}</div><div class="text-xs text-primary font-mono mt-1">${p.barcode}</div></td><td class="p-4"><span class="${stockColor} font-bold">${p.stock || 0}</span></td><td class="p-4 text-yellow-500 font-mono">${(p.cost_price || 0).toLocaleString()}</td><td class="p-4 text-secondary font-bold font-mono">${p.price.toLocaleString()}</td><td class="p-4 text-center flex justify-center gap-2"><button onclick="editProduct('${p.id}')" class="px-4 py-2 bg-white/10 rounded-xl hover:bg-primary hover:text-white transition-all">تعديل ✏️</button><button onclick="deleteProduct('${p.id}')" class="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all">حذف 🗑️</button></td></tr>`; });
-        }
-        function filterInventory() { const term = document.getElementById('search-inventory').value.toLowerCase(); renderInventoryList(allProducts.filter(p => p.name.toLowerCase().includes(term) || p.barcode.includes(term))); }
-
-        async function saveProduct() {
-            const id = document.getElementById('edit-id').value; const data = { name: document.getElementById('inv-name').value, cost_price: parseInt(document.getElementById('inv-cost').value) || 0, price: parseInt(document.getElementById('inv-price').value) || 0, stock: parseInt(document.getElementById('inv-stock').value) || 0, barcode: document.getElementById('inv-barcode').value };
-            if(!data.name || !data.price || !data.barcode) return showToast("يرجى إكمال البيانات الأساسية!", 'error');
-            try {
-                if(id) { await pb.collection('products').update(id, data); const idx = allProducts.findIndex(p => p.id === id); if(idx > -1) allProducts[idx] = {id, ...data}; cancelEdit(); showToast("✅ تم تحديث بيانات المنتج", 'success'); } 
-                else { if(allProducts.find(p => p.barcode === data.barcode)) return showToast("الباركود موجود لمنتج آخر!", 'error'); const record = await pb.collection('products').create(data); allProducts.unshift(record); cancelEdit(); showToast("✅ تم إضافة المنتج للمخزن", 'success'); }
-                renderInventoryList(); playSuccess();
-            } catch(e) { showToast("فشل الحفظ في قاعدة البيانات!", 'error'); }
-        }
-
-        function editProduct(id) { const p = allProducts.find(x => x.id === id); if(!p) return; document.getElementById('edit-id').value = p.id; document.getElementById('inv-name').value = p.name; document.getElementById('inv-cost').value = p.cost_price || 0; document.getElementById('inv-price').value = p.price; document.getElementById('inv-stock').value = p.stock || 0; document.getElementById('inv-barcode').value = p.barcode; document.getElementById('form-title').innerHTML = "✏️ تعديل بيانات المنتج"; document.getElementById('btn-save').innerText = "تحديث البيانات"; document.getElementById('btn-cancel').classList.remove('hidden'); window.scrollTo({top:0, behavior:'smooth'}); }
-        function cancelEdit() { document.getElementById('edit-id').value = ''; document.getElementById('inv-name').value = ''; document.getElementById('inv-cost').value = ''; document.getElementById('inv-price').value = ''; document.getElementById('inv-stock').value = ''; document.getElementById('inv-barcode').value = ''; document.getElementById('form-title').innerHTML = "📦 إضافة منتج"; document.getElementById('btn-save').innerText = "حفظ بقاعدة البيانات"; document.getElementById('btn-cancel').classList.add('hidden'); }
-        async function deleteProduct(id) { if(confirm("هل أنت متأكد من مسح المنتج نهائياً؟")) { await pb.collection('products').delete(id); allProducts = allProducts.filter(p => p.id !== id); renderInventoryList(); showToast("تم الحذف بنجاح", 'warning'); } }
-
-        // ================== STATS & REPORTS ==================
-        async function fetchStats() {
-            try {
-                const records = await pb.collection('invoices').getFullList({ sort: '-created' });
-                let dRev = 0, dProf = 0, mRev = 0; const today = new Date(); const list = document.getElementById('invoices-list'); list.innerHTML = '';
-                records.forEach(inv => { const invDate = new Date(inv.created); if(invDate.toDateString() === today.toDateString()) { dRev += inv.total; dProf += (inv.profit || 0); } if(invDate.getMonth() === today.getMonth() && invDate.getFullYear() === today.getFullYear()) mRev += inv.total; list.innerHTML += `<tr class="hover:bg-white/5 transition-colors border-b border-white/5"><td class="p-4 font-mono text-xs text-textMuted">${inv.id.substring(0,8)}</td><td class="p-4 font-black font-mono text-textMain">${inv.total.toLocaleString()}</td><td class="p-4 text-green-400 font-black font-mono">${(inv.profit||0).toLocaleString()}</td><td class="p-4 text-xs text-textMuted">${invDate.toLocaleString('ar-IQ')}</td></tr>`; });
-                document.getElementById('stat-daily-rev').innerText = dRev.toLocaleString(); document.getElementById('stat-daily-profit').innerText = dProf.toLocaleString(); document.getElementById('stat-monthly-rev').innerText = mRev.toLocaleString();
-                const totalCapital = allProducts.reduce((sum, p) => sum + ((p.cost_price || 0) * (p.stock || 0)), 0); document.getElementById('stat-capital').innerText = totalCapital.toLocaleString();
-                
-                const lows = allProducts.filter(p => (p.stock || 0) <= 5); const lowCont = document.getElementById('low-stock-list'); lowCont.innerHTML = '';
-                if(lows.length === 0) lowCont.innerHTML = '<div class="text-green-400 text-sm font-bold flex items-center gap-2 p-4 bg-green-500/10 rounded-2xl border border-green-500/20">✅ المخزن بحالة ممتازة، لا توجد نواقص.</div>';
-                lows.forEach(p => lowCont.innerHTML += `<div class="flex justify-between items-center p-4 bg-red-500/10 rounded-2xl border border-red-500/20 mb-3"><span class="font-bold text-textMain">${p.name}</span><span class="text-red-400 font-black bg-red-500/20 px-3 py-1 rounded-lg">باقي: ${p.stock || 0}</span></div>`);
-            } catch(err) {}
-        }
-
-        // ================== BARCODE MAKER & THERMAL PRINTING ==================
-        function generateBarcode() { const val = document.getElementById('barcode-input').value; if(val.length > 0) { try { JsBarcode("#barcode-canvas", val, { format: "CODE128", width: 2.5, height: 80, displayValue: true, background: "#ffffff", lineColor: "#000000", margin: 10 }); } catch(e){} } }
-        function printBarcode() { const printWin = window.open('', '_blank'); printWin.document.write(`<html><body onload="window.print(); window.close();" style="text-align:center; padding-top:50px;"><img src="${document.getElementById('barcode-canvas').toDataURL("image/png")}"></body></html>`); printWin.document.close(); }
-        
-        function printReceipt(items, total, invoiceId) {
-            const printWin = window.open('', '_blank');
-            let itemsHtml = items.map(i => `<tr><td style="padding:6px 0; border-bottom:1px dashed #333; font-weight:bold; font-size:14px;">${i.name} <br><small style="font-weight:normal; font-size:12px;">x${i.qty} (${i.price.toLocaleString()})</small></td><td style="padding:6px 0; border-bottom:1px dashed #333; text-align:left; font-weight:bold; font-size:14px;">${(i.price * i.qty).toLocaleString()}</td></tr>`).join('');
-            printWin.document.write(`<html dir="rtl"><head><title>Receipt</title></head><body onload="window.print(); window.close();" style="font-family:sans-serif; width:75mm; margin:0 auto; padding:5px; color:#000;"><h2 style="text-align:center; margin:0; font-size:22px; font-weight:900; letter-spacing:1px;">NEXUS MARKET</h2><p style="text-align:center; margin:5px 0; font-size:12px;">تطبيق نقاط البيع الذكي</p><div style="border-top:2px dashed #000; margin:10px 0;"></div><p style="font-size:12px; margin:2px 0;">رقم: <span style="font-family:monospace;">${invoiceId.substring(0,8)}</span></p><p style="font-size:12px; margin:2px 0;">التاريخ: ${new Date().toLocaleString('ar-IQ')}</p><div style="border-top:2px dashed #000; margin:10px 0;"></div><table style="width:100%; border-collapse:collapse;">${itemsHtml}</table><div style="font-size:22px; font-weight:900; margin-top:15px; text-align:center; border:2px solid #000; padding:8px; border-radius:5px;">الإجمالي: ${total.toLocaleString()}</div><div style="border-top:2px dashed #000; margin:15px 0;"></div><h4 style="text-align:center; font-size:14px;">شكراً لتسوقكم معنا</h4><p style="text-align:center; font-size:10px; margin-top:20px;">Powered by NEXUS ERP</p></body></html>`);
-            printWin.document.close();
-        }
-
-        window.onload = () => fetchInitialProducts();
+      AOS.init({duration:700, once:true});
+      const swiper = new Swiper('.swiper', {pagination:{el:'.swiper-pagination'}, loop:true, autoplay:{delay:3000}})
     </script>
-</body>
+  </body>
 </html>
