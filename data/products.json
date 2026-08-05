@@ -1,0 +1,9 @@
+{
+  "products": [
+    {"id": "p1", "title": "ساعة ذكية Neon X", "price": 129.99, "description": "ساعة ذكية بمظهر نيوني مع ميزات تتبع النشاط والاشعارات.", "image": "https://picsum.photos/seed/watch/800/600"},
+    {"id": "p2", "title": "سماعات لاسلكية BeatPro", "price": 79.5, "description": "جودة صوت ممتازة وعزل للضوضاء مع تصميم مريح.", "image": "https://picsum.photos/seed/headphones/800/600"},
+    {"id": "p3", "title": "حقيبة ظهر CityGlow", "price": 49.0, "description": "حقيبة ظهر مقاومة للمطر مع مساحة واسعة وتنظيم ذكي.", "image": "https://picsum.photos/seed/backpack/800/600"},
+    {"id": "p4", "title": "نظارات شمسية Aurora", "price": 39.99, "description": "نظارات بتصميم عصري ولون نيوني جذاب.", "image": "https://picsum.photos/seed/sunglasses/800/600"},
+    {"id": "p5", "title": "مصباح مكتب NeonLite", "price": 24.99, "description": "مصباح LED مع ألوان قابلة للتغيير وتأثير نيون لطيف.", "image": "https://picsum.photos/seed/lamp/800/600"}
+  ]
+}
